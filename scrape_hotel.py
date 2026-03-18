@@ -13,6 +13,12 @@ def scrape_hotel(page, kota):
     page.type('input[data-testid="autocomplete-field"]', kota, delay=100)
     time.sleep(3)
 
+    # Debug - print semua suggestion yang muncul
+    suggestions = page.locator('[data-testid^="accom_autocomplete_item_"]')
+    print(f"Suggestion untuk {kota}:")
+    for i in range(suggestions.count()):
+        print(f"  {i}: {suggestions.nth(i).inner_text()}")
+
     page.wait_for_selector('[data-testid="accom_autocomplete_item_0"]')
     page.click('[data-testid="accom_autocomplete_item_0"]')
     time.sleep(2)
@@ -90,7 +96,6 @@ def scrape_semua_area():
         )
         page = context.new_page()
 
-        # Sembunyikan tanda-tanda bot
         page.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
             Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
