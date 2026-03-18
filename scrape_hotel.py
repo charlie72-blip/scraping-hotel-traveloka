@@ -28,7 +28,6 @@ def scrape_hotel(page, kota):
         print(f"Tidak ada hasil untuk {kota}")
         return []
 
-    # Filter bintang 4
     try:
         page.wait_for_selector('[data-testid="STAR4"]', timeout=5000)
         page.click('[data-testid="STAR4"]')
@@ -36,7 +35,6 @@ def scrape_hotel(page, kota):
     except:
         print(f"Filter bintang tidak ditemukan untuk {kota}")
 
-    # Scroll sampai semua hotel ter-load
     prev_count = 0
     for i in range(20):
         page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -48,8 +46,8 @@ def scrape_hotel(page, kota):
         prev_count = current_count
 
     html = page.content()
-    soup = BeautifulSoup(html, "html.parser")
 
+    soup = BeautifulSoup(html, "html.parser")
     hotels = []
     items = soup.find_all("div", attrs={"data-testid": "tvat-searchListItem"})
 
@@ -84,7 +82,20 @@ def scrape_semua_area():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 720},
+            locale="id-ID",
+            timezone_id="Asia/Jakarta",
+        )
+        page = context.new_page()
+
+        # Sembunyikan tanda-tanda bot
+        page.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
+            Object.defineProperty(navigator, 'languages', {get: () => ['id-ID', 'id', 'en-US']});
+        """)
 
         for area in area_semarang:
             print(f"\n=== Scraping {area} ===")
@@ -94,9 +105,9 @@ def scrape_semua_area():
 
         browser.close()
 
-    # Hapus duplikat berdasarkan nama hotel
     df = pd.DataFrame(semua_hotel)
-    df = df.drop_duplicates(subset=["Nama Hotel"])
+    if not df.empty:
+        df = df.drop_duplicates(subset=["Nama Hotel"])
     df.to_csv("hotel_bintang4_semarang_lengkap.csv", index=False)
     print(f"\n✅ Total {len(df)} hotel unik tersimpan di hotel_bintang4_semarang_lengkap.csv")
     print(df)
