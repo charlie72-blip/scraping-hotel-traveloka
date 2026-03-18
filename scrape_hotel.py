@@ -3,7 +3,17 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 
-def scrape_hotel(page, kota):
+# Mapping area ke index suggestion yang benar
+SUGGESTION_INDEX = {
+    "Semarang Utara": 0,
+    "Semarang Tengah": 0,
+    "Semarang Selatan": 0,
+    "Semarang Barat": 6,
+    "Semarang Timur": 0,
+    "Semarang": 0,
+}
+
+def scrape_hotel(page, kota, suggestion_index=0):
     page.goto("https://www.traveloka.com/id-id/hotel")
     time.sleep(4)
 
@@ -13,14 +23,16 @@ def scrape_hotel(page, kota):
     page.type('input[data-testid="autocomplete-field"]', kota, delay=100)
     time.sleep(3)
 
-    # Debug - print semua suggestion yang muncul
+    # Debug suggestion
     suggestions = page.locator('[data-testid^="accom_autocomplete_item_"]')
     print(f"Suggestion untuk {kota}:")
     for i in range(suggestions.count()):
         print(f"  {i}: {suggestions.nth(i).inner_text()}")
 
-    page.wait_for_selector('[data-testid="accom_autocomplete_item_0"]')
-    page.click('[data-testid="accom_autocomplete_item_0"]')
+    # Klik suggestion sesuai index
+    target = f'[data-testid="accom_autocomplete_item_{suggestion_index}"]'
+    page.wait_for_selector(target)
+    page.click(target)
     time.sleep(2)
 
     page.wait_for_selector('[data-testid="search-submit-button"]')
@@ -52,7 +64,6 @@ def scrape_hotel(page, kota):
         prev_count = current_count
 
     html = page.content()
-
     soup = BeautifulSoup(html, "html.parser")
     hotels = []
     items = soup.find_all("div", attrs={"data-testid": "tvat-searchListItem"})
@@ -104,7 +115,8 @@ def scrape_semua_area():
 
         for area in area_semarang:
             print(f"\n=== Scraping {area} ===")
-            hotels = scrape_hotel(page, area)
+            idx = SUGGESTION_INDEX.get(area, 0)
+            hotels = scrape_hotel(page, area, idx)
             semua_hotel.extend(hotels)
             time.sleep(3)
 
