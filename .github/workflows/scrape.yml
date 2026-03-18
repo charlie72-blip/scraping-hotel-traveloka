@@ -28,7 +28,7 @@ jobs:
         run: python scrape_hotel.py
 
       - name: Upload hasil CSV
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: hasil-scraping
           path: hotel_bintang4_semarang_lengkap.csv
